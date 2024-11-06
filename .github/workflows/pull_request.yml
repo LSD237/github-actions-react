@@ -5,4 +5,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Print context
-        run: echo "${{ github }}" # Специальный объект контекста
+        run: echo "${{ toJSON(github) }}" # Специальный объект контекста
