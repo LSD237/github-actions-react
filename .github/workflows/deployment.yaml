@@ -35,11 +35,19 @@ jobs:
       - name: Lint application
         run: npm run lint
   build:
-    runs-on: ubuntu-latest
     needs: [lint, test]
+    strategy: # Стратегии/матрицы - вроде переменных, которые дают возможность тестить на разных ОС и NodeJS
+      matrix:
+        node-version: [14, 16]
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }} # этот шаг(запуск на ОС) будет повторяться столько же, сколько и значений в переменной матрицы "os"
     steps:
       - name: Get repository code
         uses: actions/checkout@v4
+      - name: Install Node JS
+        uses: actions/setup-node@v4 # экшен "Setup Node.js environment"
+        with:
+          node-version: ${{ matrix.node-version }}
       - name: Cache deps
         uses: actions/cache@v4
         with:
