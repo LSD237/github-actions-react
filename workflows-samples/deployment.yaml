@@ -1,31 +1,59 @@
 name: Deploy React App
-on: push
+on: 
+  push:
+    branches:
+      - main
+    # paths-ignore:
+    #   - '.github/workflows/*'
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - name: Get repository code # Получаем исходный код на виртуальной машине
         uses: actions/checkout@v4
+      - name: Cache deps # экшен для кэширования зависимостей(ускоряет работу). Прописывается в каждой джобе перед установкой зависимостей.
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm # указывается, что кэшировать
+          key: node-modules-${{ hashFiles('**/package-lock.json') }} # динамический ключ при изменении зависимостей
       - name: Install dependencies # Устанавливаем зависимости (виртуально)
         run: npm ci # То же, что и "npm i"
       - name: Test application
         run: npm run test
   lint:
     runs-on: ubuntu-latest
-    needs: test
     steps:
       - name: Get repository code
         uses: actions/checkout@v4
+      - name: Cache deps
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: node-modules-${{ hashFiles('**/package-lock.json') }}
       - name: Install dependencies
         run: npm ci
       - name: Lint application
         run: npm run lint
   build:
-    runs-on: ubuntu-latest
-    needs: lint
+    needs: [lint, test]
+    continue-on-error: true # позволяет продолжить работу, даже если одна из проверок, (к примеру 14нода на винде) выдает ошибку.
+    strategy: # Стратегии/матрицы - вроде переменных, которые дают возможность тестить на разных ОС и NodeJS
+      matrix:
+        node-version: [14, 16]
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }} # этот шаг(запуск на ОС) будет повторяться столько же, сколько и значений в переменной матрицы "os"
     steps:
       - name: Get repository code
         uses: actions/checkout@v4
+      - name: Install Node JS
+        uses: actions/setup-node@v4 # экшен "Setup Node.js environment"
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Cache deps
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: node-modules-${{ hashFiles('**/package-lock.json') }}
       - name: Install dependencies
         run: npm ci
       - name: Build application
