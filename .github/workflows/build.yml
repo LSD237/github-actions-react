@@ -1,4 +1,4 @@
-name: Build
+name: Build & Deploy
 on: [push, workflow_dispatch]
 jobs:
   build:
@@ -13,6 +13,13 @@ jobs:
       - name: Upload Artifact # Дает доступ к статичным файлам
         uses: actions/upload-artifact@v4
         with:
-          name: build-files
+          name: build-files # .*
           path: build
-
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get build project
+        uses: actions/download-artifact@v4 # для получения сбилдженого проекта(тех самых статичных файлов)
+        with:
+          name: build-files # тоже название которое мы дали при upload артифактов - .*
